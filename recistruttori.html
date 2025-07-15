@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Registrazione Ore Istruttori</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    select, input { padding: 5px; margin-top: 5px; width: 250px; }
+    .card {
+      border: 2px solid #007bff;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 500px;
+      background-color: #f9f9f9;
+      margin-top: 30px;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Registrazione ore istruttori</h2>
+
+  <div class="card">
+    <h3>Compilazione dati</h3>
+
+    <label for="istruttoreOre">Istruttore:</label>
+    <select id="istruttoreOre">
+      <option value="">-- Seleziona istruttore --</option>
+    </select>
+
+    <label for="gruppoOre">Gruppo:</label>
+    <select id="gruppoOre">
+      <option value="">-- Seleziona gruppo --</option>
+    </select>
+
+    <label for="dataOre">Data:</label>
+    <input type="date" id="dataOre">
+
+    <label for="ore">Ore lavorate:</label>
+    <select id="ore"></select>
+  </div>
+
+  <!-- BLOCCO SOSTITUZIONE -->
+  <div id="sostituzioneBox" class="card hidden">
+    <h3>Sostituzione</h3>
+
+    <label for="istruttoreSostituito">Istruttore sostituito:</label>
+    <select id="istruttoreSostituito">
+      <option value="">-- Seleziona istruttore da sostituire --</option>
+    </select>
+
+    <label for="gruppoSostituito">Gruppo del sostituito:</label>
+    <select id="gruppoSostituito">
+      <option value="">-- Seleziona gruppo --</option>
+    </select>
+  </div>
+
+  <script>
+    const url = "https://script.google.com/macros/s/AKfycbynU4n1YvgchOyf0kdCg0IWPQvk0xVt0Rc3GyT4CqcCwXz12NAxhc6fpWwhE6sj9WfX/exec"; // <-- Sostituisci con il tuo link
+
+    let dati = {};
+
+    function popolaSelect(id, items, includeBlank = false) {
+      const select = document.getElementById(id);
+      select.innerHTML = "";
+      if (includeBlank) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.text = "-- Seleziona --";
+        select.appendChild(opt);
+      }
+      items.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item;
+        opt.text = item;
+        select.appendChild(opt);
+      });
+    }
+
+    function aggiornaGruppi(nome, mappa, idSelect) {
+      const select = document.getElementById(idSelect);
+      select.innerHTML = "";
+      if (mappa[nome]) {
+        mappa[nome].forEach(g => {
+          const opt = document.createElement("option");
+          opt.value = g;
+          opt.text = g;
+          select.appendChild(opt);
+        });
+      }
+    }
+
+    function popolaMenuOre() {
+      const oreSelect = document.getElementById("ore");
+      oreSelect.innerHTML = "";
+      for (let h = 0; h <= 8; h++) {
+        for (let m = 0; m < 60; m += 15) {
+          const hh = String(h);
+          const mm = m.toString().padStart(2, '0');
+          const label = `${hh}:${mm}`;
+          const opt = document.createElement("option");
+          opt.value = label;
+          opt.text = label;
+          oreSelect.appendChild(opt);
+        }
+      }
+    }
+
+    function impostaDataOggi(idInput) {
+      const oggi = new Date().toISOString().split('T')[0];
+      document.getElementById(idInput).value = oggi;
+    }
+
+    fetch(url)
+      .then(res => res.json())
+      .then(json => {
+        dati = json;
+
+        // Popola istruttore
+        popolaSelect("istruttoreOre", dati.istruttori, true);
+        impostaDataOggi("dataOre");
+        popolaMenuOre();
+
+        // Popola istruttori anche nel campo "istruttore sostituito"
+        popolaSelect("istruttoreSostituito", dati.istruttori, true);
+      });
+
+    // Quando cambio istruttore → aggiorno gruppi
+    document.getElementById("istruttoreOre").addEventListener("change", e => {
+      aggiornaGruppi(e.target.value, dati.gruppi_istruttore, "gruppoOre");
+    });
+
+    // Quando cambio gruppo → controllo se "Sostituzione"
+    document.getElementById("gruppoOre").addEventListener("change", e => {
+      const val = e.target.value.toLowerCase();
+      const box = document.getElementById("sostituzioneBox");
+      if (val === "sostituzione") {
+        box.classList.remove("hidden");
+      } else {
+        box.classList.add("hidden");
+      }
+    });
+
+    // Quando seleziono istruttore da sostituire → mostro i suoi gruppi
+    document.getElementById("istruttoreSostituito").addEventListener("change", e => {
+      aggiornaGruppi(e.target.value, dati.gruppi_istruttore, "gruppoSostituito");
+    });
+  </script>
+</body>
+</html>
